@@ -1,0 +1,38 @@
+#======== 建立資料庫 ========
+#CREATE DATABASE IF NOT EXISTS imbidgoddb DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+
+#CREATE user 'imbidgoduser'@'%' identified by 'imbidgodpass';
+#Alter user 'imbidgoduser'@'%' IDENTIFIED WITH mysql_native_password BY 'imbidgodpass'; #更新用户密码
+
+#grant all on imbidgoddb.* to 'imbidgoduser'@'%'; -- Grants all privileges to the new user on the database
+
+#mysql -uimbidgoduser -pimbidgodpass; -- login db  by imbidgoduser
+
+create view getbider_view as
+select a.*
+from activity_detail a,
+									(
+									select activity_id, max(coin) coin, count from (
+																	select 	activity_id,
+									       									join_bid_coin as coin,
+									       									count(join_bid_coin) as count
+																		 from activity_detail
+									       						group by join_bid_coin, activity_id
+																) as result
+									 where count = 1
+									 group by activity_id, count
+									union
+									select activity_id, min(coin) coin, count from (
+																	select 	activity_id,
+									       									join_bid_coin as coin,
+									       									count(join_bid_coin) as count
+																		 from activity_detail
+									       						group by join_bid_coin, activity_id
+																) as result
+									 where count = 1
+									 group by activity_id, count
+									) b
+where a.join_bid_coin = b.coin
+and a.activity_id = b.activity_id
+;
+
